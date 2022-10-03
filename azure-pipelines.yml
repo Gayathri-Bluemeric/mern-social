@@ -23,7 +23,7 @@ variables:
 - name:  distributionID
   value: disafabe347eae1ee44d0e885ee3fdcade76ef
 - name:  endPoint
-  value: https://portal.gopaddle.io
+  value: portal.gopaddle.io
 
 steps:
 - script: |
