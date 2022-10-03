@@ -49,11 +49,12 @@ steps:
     buildVersion="$(cat buildInfo.json | jq -r '.buildVersion')"
     buildInProgress=true
     commitMessage=`echo "$(Build.SourceVersionMessage)" | base64`
+    buildStatus="$(cat buildStatusInfo.json | jq -r '.status')"
     
     echo "Build ID is $buildID"
     
     if [[ $buildStatus == "Created" ]];   then curl -H 'Authorization: Bearer $(GP_API_TOKEN)' -X PUT -d '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}' https://$(endPoint)/gateway/v1/$(projectID)/application/$(applicationID) > rollingupdateinfo.json;     rollingUpdateMessage="$(cat rollingupdateinfo.json | jq -r '.message')";     echo "$rollingUpdateMessage"; fi;
     echo '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}'
     echo "Rolling Update Endpoint is https://$(endPoint)/gateway/v1/$(projectID)/application/$(applicationID)"
-    cat rollingupdateinfo.json
+    
   displayName: 'Creating Rolling Update'
