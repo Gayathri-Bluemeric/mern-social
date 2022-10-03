@@ -1,19 +1,47 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+# gopaddle pipeline template
 
 trigger:
-- second-edition
+- master
 
 pool:
   vmImage: ubuntu-latest
+  
+variables:
+- group: gp-api-key
+- name:  containerID
+  value: svceaa63f6c5c61e5c4dbbcbcacc18d1de256dd8
+- name:  serviceID
+  value: sgd9abffa8sgd2d2sg4e67sg9e23sg2326b964008f
+- name:  serviceName
+  value: mern-social
+- name:  applicationID
+  value: appsadab1e83c5dcac46fec89a7c8bea685e6de0 
+- name:  projectID
+  value: prj7ab4a223e49f4e447aeb59def50be9a9a137
+- name:  releaseID
+  value: reldea0afafeca8de42b2e8e02e8cab2044cd5
+- name:  distributionID
+  value: disafabe347eae1ee44d0e885ee3fdcade76ef
+- name:  endPoint
+  value: https://portal.gopaddle.io
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    # Trigger the build as soon as the code is committed
+    curl -H 'Authorization: Bearer $(GP_API_TOKEN)' -X POST -d '{"serviceID":"$(containerID)","releaseID":"$(releaseID)","distributionID":"$(distributionID)"}' https://$(endPoint)/gateway/v1/$(projectID)/build > buildInfo.json
+    
+    # Get build ID and commit message from the build response
+    buildID="$(cat buildInfo.json | jq -r '.buildID')"
+    buildVersion="$(cat buildInfo.json | jq -r '.buildVersion')"
+    buildInProgress=true
+    commitMessage=`echo "$(Build.SourceVersionMessage)" | base64`
+    
+    # Wait until build is complete
+    for (( ; ; ));do   curl -H 'Authorization: Bearer $(GP_API_TOKEN)' https://$(endPoint)/gateway/v1/$(projectID)/build/$buildID > buildStatusInfo.json;   buildStatus="$(cat buildStatusInfo.json | jq -r '.status')";    echo "$buildStatus";   if [[ $buildStatus == "Failed" ]];   then     echo "build failed";     break;   elif [[ $buildStatus == "Created" ]];   then     echo "build Created successfully";          break;   elif [[ $buildStatus == "Creating" ]];   then     if [[ $buildInProgress == true ]];     then       echo "build creating...";       buildInProgress=false;     fi;     continue;   else     echo "unknown status build dropped";     break;   fi; done
+  displayName: 'Triggering Build'
+  
+- script: |
+    # Trigger Rolling Update
+    if [[ $buildStatus == "Created" ]];   then curl -H 'Authorization: Bearer $(GP_API_TOKEN)' -X PUT -d '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}' https://$(endPoint)/gateway/v1/$(projectID)/application/$(applicationID) > rollingupdateinfo.json;     rollingUpdateMessage="$(cat rollingupdateinfo.json | jq -r '.message')";     echo "$rollingUpdateMessage"; fi;
+    echo '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}'
+  displayName: 'Creating Rolling Update'
