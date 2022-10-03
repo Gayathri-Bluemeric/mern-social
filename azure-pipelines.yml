@@ -54,4 +54,5 @@ steps:
     
     if [[ $buildStatus == "Created" ]];   then curl -H 'Authorization: Bearer $(GP_API_TOKEN)' -X PUT -d '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}' https://$(endPoint)/gateway/v1/$(projectID)/application/$(applicationID) > rollingupdateinfo.json;     rollingUpdateMessage="$(cat rollingupdateinfo.json | jq -r '.message')";     echo "$rollingUpdateMessage"; fi;
     echo '{"serviceGroups":[{"services":[{"id":"$(containerID)","serviceVersion":"draft","releaseConfig":{"buildID":"'"$buildID"'","version":"'"$buildVersion"'"}}],"id":"$(serviceID)","name":"$(serviceName)","version":"draft","description":"'"$commitMessage"'"}],"deploymentTemplateVersion":"draft","updateType":"buildUpdate"}'
+    cat rollingupdateinfo.json
   displayName: 'Creating Rolling Update'
