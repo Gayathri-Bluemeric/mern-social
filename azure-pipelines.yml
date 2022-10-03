@@ -29,6 +29,7 @@ steps:
 - script: |
     # Trigger the build as soon as the code is committed
     curl -H 'Authorization: Bearer $(GP_API_TOKEN)' -X POST -d '{"serviceID":"$(containerID)","releaseID":"$(releaseID)","distributionID":"$(distributionID)"}' https://$(endPoint)/gateway/v1/$(projectID)/build > buildInfo.json
+    cat buildInfo.json
     
     # Get build ID and commit message from the build response
     buildID="$(cat buildInfo.json | jq -r '.buildID')"
