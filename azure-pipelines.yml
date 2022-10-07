@@ -1,7 +1,7 @@
 # gopaddle pipeline template
 
 trigger:
-- master
+- second-edition
 
 pool:
   vmImage: ubuntu-latest
